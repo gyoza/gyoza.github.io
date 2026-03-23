@@ -1,0 +1,4 @@
+project_entries:
+  - title: Prometheus Metric Cardinality Calculator
+    url: /metric-cardinality-calculator.html
+    desc: Test your metric design for high cardinality before deploying into production

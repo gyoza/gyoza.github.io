@@ -1,0 +1,372 @@
+---
+layout: none
+permalink: /metric-cardinality-calculator.html
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prometheus Metric Cardinality Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .metric-input {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #444;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .labels-section {
+            margin-bottom: 25px;
+        }
+
+        .label-item {
+            display: grid;
+            grid-template-columns: 1fr 120px 40px;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            align-items: center;
+        }
+
+        .label-item input {
+            margin-bottom: 0;
+        }
+
+        .remove-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            height: 40px;
+            transition: background 0.2s;
+        }
+
+        .remove-btn:hover {
+            background: #c0392b;
+        }
+
+        .add-label-btn,
+        .calculate-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.2s;
+            margin-right: 10px;
+        }
+
+        .add-label-btn:hover,
+        .calculate-btn:hover {
+            background: #5568d3;
+        }
+
+        .result-box {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result-box.show {
+            display: block;
+        }
+
+        .result-box.low {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .result-box.medium {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .result-box.high {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .result-box.low .result-title {
+            color: #155724;
+        }
+
+        .result-box.medium .result-title {
+            color: #856404;
+        }
+
+        .result-box.high .result-title {
+            color: #721c24;
+        }
+
+        .metric-count {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .calculation-detail {
+            font-family: 'Courier New', monospace;
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        .info-text {
+            margin-top: 10px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .guidelines {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8eaf6;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .guidelines h3 {
+            color: #3f51b5;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .guidelines ul {
+            margin-left: 20px;
+        }
+
+        .guidelines li {
+            margin-bottom: 6px;
+        }
+
+        .small-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prometheus Metric Cardinality Calculator</h1>
+        <p class="subtitle">Test your metric design before it breaks production</p>
+
+        <div class="metric-input">
+            <label for="metricName">Metric Name</label>
+            <input
+                type="text"
+                id="metricName"
+                placeholder="e.g., deployments_total, http_requests_total"
+                value="deployments_total"
+            >
+        </div>
+
+        <div class="labels-section">
+            <label>Labels & Cardinality</label>
+            <p class="small-text">Add each label and how many unique values it can have</p>
+            <div id="labelsList">
+                <div class="label-item">
+                    <input type="text" placeholder="Label name (e.g., status)" value="status" class="label-name">
+                    <input type="number" placeholder="Unique values" value="5" min="1" class="label-count">
+                    <button class="remove-btn" onclick="removeLabel(this)">×</button>
+                </div>
+                <div class="label-item">
+                    <input type="text" placeholder="Label name (e.g., environment)" value="environment" class="label-name">
+                    <input type="number" placeholder="Unique values" value="10" min="1" class="label-count">
+                    <button class="remove-btn" onclick="removeLabel(this)">×</button>
+                </div>
+            </div>
+            <button class="add-label-btn" onclick="addLabel()">+ Add Label</button>
+        </div>
+
+        <button class="calculate-btn" onclick="calculate()">Calculate Cardinality</button>
+
+        <div id="result" class="result-box">
+            <div class="result-title" id="resultTitle"></div>
+            <div class="metric-count" id="metricCount"></div>
+            <div class="calculation-detail" id="calculation"></div>
+            <div class="info-text" id="infoText"></div>
+        </div>
+
+        <div class="guidelines">
+            <h3>Cardinality Guidelines</h3>
+            <ul>
+                <li><strong>Low (&lt; 1,000):</strong> Safe - Great for operational metrics</li>
+                <li><strong>Medium (1,000 - 10,000):</strong> Caution - Monitor closely, may impact performance</li>
+                <li><strong>High (&gt; 10,000):</strong> Danger - Will likely cause scrape failures, OOM, slow queries</li>
+            </ul>
+            <p style="margin-top: 12px;"><strong>Pro Tip:</strong> Avoid labels like accountId, pipelineId, userId, requestId - they create unbounded cardinality.</p>
+        </div>
+    </div>
+
+    <script>
+        function addLabel() {
+            const labelsList = document.getElementById('labelsList');
+            const labelItem = document.createElement('div');
+            labelItem.className = 'label-item';
+            labelItem.innerHTML = `
+                <input type="text" placeholder="Label name (e.g., status)" class="label-name">
+                <input type="number" placeholder="Unique values" min="1" class="label-count">
+                <button class="remove-btn" onclick="removeLabel(this)">×</button>
+            `;
+            labelsList.appendChild(labelItem);
+        }
+
+        function removeLabel(btn) {
+            const labelsList = document.getElementById('labelsList');
+            if (labelsList.children.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                alert('You must have at least one label!');
+            }
+        }
+
+        function calculate() {
+            const metricName = document.getElementById('metricName').value.trim();
+            const labelItems = document.querySelectorAll('.label-item');
+
+            if (!metricName) {
+                alert('Please enter a metric name');
+                return;
+            }
+
+            let labels = [];
+            let total = 1;
+            let calculationSteps = [];
+
+            labelItems.forEach(item => {
+                const labelName = item.querySelector('.label-name').value.trim();
+                const labelCount = parseInt(item.querySelector('.label-count').value) || 0;
+
+                if (labelName && labelCount > 0) {
+                    labels.push({ name: labelName, count: labelCount });
+                    total *= labelCount;
+                    calculationSteps.push(`${labelName}=${labelCount}`);
+                }
+            });
+
+            if (labels.length === 0) {
+                alert('Please add at least one label with a count');
+                return;
+            }
+
+            // Display results
+            const resultBox = document.getElementById('result');
+            const resultTitle = document.getElementById('resultTitle');
+            const metricCount = document.getElementById('metricCount');
+            const calculation = document.getElementById('calculation');
+            const infoText = document.getElementById('infoText');
+
+            // Determine severity
+            let severity, title, info;
+            if (total < 1000) {
+                severity = 'low';
+                title = '✓ Low Cardinality - Safe';
+                info = 'This metric design is safe and follows best practices. Your Prometheus/GMP instance should handle this without issues.';
+            } else if (total < 10000) {
+                severity = 'medium';
+                title = '⚠ Medium Cardinality - Use Caution';
+                info = 'This metric will create a moderate number of time series. Monitor scrape performance and query latency. Consider if all labels are truly necessary.';
+            } else {
+                severity = 'high';
+                title = '✗ High Cardinality - Dangerous';
+                info = `This metric will create ${total.toLocaleString()} unique time series. This WILL cause scrape failures, memory issues, and slow queries. Remove high-cardinality labels like accountId, pipelineId, or split into multiple metrics.`;
+            }
+
+            resultBox.className = `result-box ${severity} show`;
+            resultTitle.textContent = title;
+            metricCount.textContent = `${total.toLocaleString()} unique time series`;
+            calculation.textContent = `Calculation: ${calculationSteps.join(' × ')} = ${total.toLocaleString()}`;
+            infoText.textContent = info;
+
+            // Scroll to result
+            resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Allow Enter key to calculate
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                calculate();
+            }
+        });
+
+        // Calculate on load with example values
+        window.addEventListener('load', function() {
+            calculate();
+        });
+    </script>
+</body>
+</html>
