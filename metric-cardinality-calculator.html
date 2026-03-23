@@ -217,6 +217,32 @@ permalink: /metric-cardinality-calculator.html
             color: #666;
             margin-top: 5px;
         }
+
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .info-box code {
+            background: rgba(0,0,0,0.05);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+        }
+
+        .info-box li {
+            margin: 4px 0;
+        }
     </style>
 </head>
 <body>
@@ -237,6 +263,31 @@ permalink: /metric-cardinality-calculator.html
         <div class="labels-section">
             <label>Labels & Cardinality</label>
             <p class="small-text">Add each label and how many unique values it can have</p>
+
+            <div class="info-box">
+                <strong>How to find unique label values:</strong>
+
+                <p style="margin-top: 12px;"><strong>For existing metrics</strong> in Prometheus/GMP, run:</p>
+                <code>count(count by (label_name) (your_metric_name))</code>
+                <p style="margin-top: 8px;">Examples:</p>
+                <ul style="margin-top: 4px;">
+                    <li><code>count(count by (status) (http_requests_total))</code></li>
+                    <li><code>count(count by (environment) (deployments_total))</code></li>
+                </ul>
+
+                <p style="margin-top: 16px;"><strong>For new metrics</strong>, count the total possible values for each label:</p>
+                <ul style="margin-top: 8px;">
+                    <li><strong>orgId:</strong> If you use orgId as a label, set the count to the total number of organizations in your system (e.g., 500 orgs = 500)</li>
+                    <li><strong>userId:</strong> If you use userId, set it to total users (e.g., 10,000 users = 10,000) - ⚠️ This will create high cardinality!</li>
+                    <li><strong>environment:</strong> Count your environments (e.g., dev, staging, prod = 3)</li>
+                    <li><strong>region:</strong> Count deployment regions (e.g., us-west, us-east, eu-central = 3)</li>
+                    <li><strong>status:</strong> Count possible status values (e.g., success, failure, timeout = 3)</li>
+                    <li><strong>pod_name:</strong> If you label by pod name, count max pods (e.g., 20 pods in your deployment = 20)</li>
+                    <li><strong>accountId:</strong> Total accounts in your platform (e.g., 2,000 accounts = 2,000) - ⚠️ High cardinality!</li>
+                </ul>
+                <p style="margin-top: 12px;"><em>Remember: Labels with IDs (orgId, userId, accountId, requestId) multiply together - be very careful!</em></p>
+            </div>
+
             <div id="labelsList">
                 <div class="label-item">
                     <input type="text" placeholder="Label name (e.g., status)" value="status" class="label-name">
