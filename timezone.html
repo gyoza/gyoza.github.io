@@ -420,7 +420,7 @@
           const d = btn.dataset;
           const localStr = `${d.localdate} ${d.local12} (${d.local24} ${d.localabbrev})`;
           const convStr = `${d.convdate} ${d.conv12} (${d.conv24} ${d.convabbrev})`;
-          const text = `${localStr} - ${convStr} (${d.zone})`;
+          const text = `${localStr} - ${convStr}`;
           navigator.clipboard.writeText(text).then(() => {
             showToaster('Copied to clipboard!');
           }).catch(err => {
