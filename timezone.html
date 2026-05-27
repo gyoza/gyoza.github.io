@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Timezone Converter</title>
+  <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      color: #333;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    p {
+      max-width: 600px;
+      margin: 0 auto 2rem;
+      color: #555;
+      text-align: center;
+    }
+
+    #input-container,
+    #slider-container,
+    #local-time-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 2rem;
+      width: 100%;
+    }
+
+    #input-container {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #time-input {
+      padding: 0.75rem;
+      font-size: 1rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      width: 150px;
+      background-color: #fff;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    #time-input:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    #reset-button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      background-color: #6366f1;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    #reset-button:hover {
+      background-color: #4f46e5;
+      transform: translateY(-2px);
+    }
+
+    #slider-container {
+      align-items: center;
+    }
+
+    #offset-slider {
+      width: 80%;
+      margin: 1rem 0;
+      accent-color: #6366f1;
+    }
+
+    #offset-display {
+      font-size: 1rem;
+      color: #2c3e50;
+      font-weight: 500;
+    }
+
+    #local-time-box {
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      font-size: 1.25rem;
+      color: #2c3e50;
+      font-weight: 600;
+      backdrop-filter: blur(5px);
+      width: 110%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    table {
+      width: 120%;
+      max-width: 900px;
+      border-collapse: separate;
+      border-spacing: 0;
+      background-color: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    th,
+    td {
+      padding: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: middle;
+    }
+
+    th {
+      background-color: #6366f1;
+      color: white;
+      font-weight: 600;
+      text-align: left;
+    }
+
+    td {
+      text-align: left;
+    }
+
+    .time-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 300px;
+      /* Ensure consistent width for alignment */
+    }
+
+    .time-text {
+      flex-grow: 1;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+
+    tr:hover {
+      background-color: #f1f5f9;
+    }
+
+    .copy-btn,
+    .discord-btn,
+    .short-copy-btn {
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+    }
+
+    .copy-btn {
+      background-color: #8b5cf6;
+      /* Purple */
+      color: white;
+    }
+
+    .copy-btn:hover {
+      background-color: #7c3aed;
+    }
+
+    .copy-btn.clicked {
+      background-color: #facc15;
+      /* Yellow */
+    }
+
+    .discord-btn {
+      background-color: #3b82f6;
+      /* Blue */
+      color: white;
+    }
+
+    .discord-btn:hover {
+      background-color: #2563eb;
+    }
+
+    .discord-btn.clicked {
+      background-color: #facc15;
+      /* Yellow */
+    }
+
+    .short-copy-btn {
+      background-color: #f59e0b;
+      /* Orange */
+      color: white;
+    }
+
+    .short-copy-btn:hover {
+      background-color: #d97706;
+    }
+
+    .short-copy-btn.clicked {
+      background-color: #facc15;
+      /* Yellow */
+    }
+
+    #copy-all-button {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      background-color: #10b981;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      margin-top: 1rem;
+    }
+
+    #copy-all-button:hover {
+      background-color: #059669;
+      transform: translateY(-2px);
+    }
+
+    #toaster {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #333;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      z-index: 1000;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      #input-container {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      #time-input,
+      #reset-button {
+        width: 100%;
+        max-width: 300px;
+        margin: 0.5rem 0;
+      }
+
+      #local-time-box,
+      table {
+        width: 100%;
+      }
+
+      .time-cell {
+        min-width: 50000;
+        flex-wrap: nowrap;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Local Timezone Converter</h1>
+  <p>Enter a time in your local timezone (HH:MM format) or leave blank for current time. Use the slider to adjust the
+    time offset (in hours). At 0, it shows the base times in each timezone. Dates are based on the local current date,
+    adjusted for timezone and offset.</p>
+  <div id="input-container">
+    <label for="time-input">Enter Time in Local (HH:MM):</label>
+    <input type="time" id="time-input" step="60">
+    <button id="reset-button">Reset to Current Time</button>
+  </div>
+  <div id="slider-container">
+    <label for="offset-slider">Time Offset (hours):</label>
+    <input type="range" id="offset-slider" min="-24" max="24" value="0" step="1">
+    <span id="offset-display">Offset: 0 hours</span>
+  </div>
+  <div id="local-time-container">
+    <div id="local-time-box">Local Time: <span id="local-time"></span></div>
+  </div>
+  <table id="time-table">
+    <thead>
+      <tr>
+        <th>Timezone</th>
+        <th>Converted Time</th>
+      </tr>
+    </thead>
+    <tbody id="time-body"></tbody>
+  </table>
+  <button id="copy-all-button">Copy All Times to Clipboard</button>
+  <div id="toaster"></div>
+
+  <script>
+    const { DateTime } = luxon;
+
+    const timezones = [
+      { name: 'Hawaii Time (HT)', tz: 'Pacific/Honolulu' },
+      { name: 'Pacific Time (PT)', tz: 'America/Los_Angeles' },
+      { name: 'Mountain Time (MT)', tz: 'America/Denver' },
+      { name: 'Central Time (CT)', tz: 'America/Chicago' },
+      { name: 'Eastern Time (EST)', tz: 'America/New_York' },
+      { name: 'Buenos Aires', tz: 'America/Argentina/Buenos_Aires' },
+      { name: 'Brazil (São Paulo)', tz: 'America/Sao_Paulo' },
+      { name: 'India', tz: 'Asia/Kolkata' },
+      { name: 'UTC', tz: 'UTC' },
+      { name: 'London', tz: 'Europe/London' },
+      { name: 'Central Europe (Paris, Berlin, Rome, Madrid)', tz: 'Europe/Paris' },
+      { name: 'New Zealand (NZ)', tz: 'Pacific/Auckland' }
+    ];
+
+    const localTz = DateTime.now().zoneName;
+
+    let currentBaseTime; // To store the current baseTime for copying
+
+    function showToaster(message) {
+      const toaster = document.getElementById('toaster');
+      toaster.textContent = message;
+      toaster.style.display = 'block';
+      setTimeout(() => {
+        toaster.style.display = 'none';
+      }, 2000);
+    }
+
+    function updateTable() {
+      const inputValue = document.getElementById('time-input').value;
+      const offset = parseInt(document.getElementById('offset-slider').value);
+      document.getElementById('offset-display').textContent = `Offset: ${offset} hours`;
+
+      let baseTime;
+
+      if (inputValue) {
+        // Parse input time with current date in local timezone
+        const [hours, minutes] = inputValue.split(':').map(Number);
+        baseTime = DateTime.now().setZone(localTz).set({ hour: hours, minute: minutes, second: 0, millisecond: 0 });
+      } else {
+        // Use current time in local timezone
+        baseTime = DateTime.now().setZone(localTz);
+      }
+
+      // Apply offset
+      baseTime = baseTime.plus({ hours: offset });
+
+      currentBaseTime = baseTime; // Store for copying
+
+      // Update local time display
+      document.getElementById('local-time').textContent = `${baseTime.toFormat('MM-dd-yy hh:mm:ss a')} (${baseTime.toFormat('HH:mm:ss')} ${baseTime.toFormat('ZZZZ')})`;
+
+      const tbody = document.getElementById('time-body');
+      tbody.innerHTML = '';
+
+      const localTime12 = baseTime.toFormat('hh:mm:ss a');
+      const localDate = baseTime.toFormat('MM-dd-yy');
+      const localTime24 = baseTime.toFormat('HH:mm:ss');
+      const localAbbrev = baseTime.toFormat('ZZZZ');
+      const localUnix = Math.floor(baseTime.toSeconds());
+
+      timezones.forEach(zone => {
+        const convertedTime = baseTime.setZone(zone.tz);
+        const format12 = zone.name === 'UTC' ? 'hh:mm:ss a' : 'hh:mm:ss a';
+        const format24 = 'HH:mm:ss';
+        const convTime12 = convertedTime.toFormat(format12);
+        const convTime24 = convertedTime.toFormat(format24);
+        const convDate = convertedTime.toFormat('MM-dd-yy');
+        const convAbbrev = convertedTime.toFormat('ZZZZ');
+        const convUnix = Math.floor(convertedTime.toSeconds());
+        const row = document.createElement('tr');
+        row.innerHTML = `
+                    <td>${zone.name}</td>
+                    <td class="time-cell">
+                        <span class="time-text">${convDate} ${convTime12} (${convTime24} ${convAbbrev})</span>
+                        <button class="copy-btn" data-local12="${localTime12}" data-local24="${localTime24}" data-localabbrev="${localAbbrev}" data-localdate="${localDate}" data-conv12="${convTime12}" data-conv24="${convTime24}" data-convabbrev="${convAbbrev}" data-convdate="${convDate}" data-zone="${zone.name}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        </button>
+                        <button class="short-copy-btn" data-local12="${localTime12}" data-localabbrev="${localAbbrev}" data-conv12="${convTime12}" data-convabbrev="${convAbbrev}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        </button>
+                        <button class="discord-btn" data-convunix="${convUnix}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </button>
+                    </td>
+                `;
+        tbody.appendChild(row);
+      });
+
+      // Add event listeners to copy buttons
+      document.querySelectorAll('.copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const d = btn.dataset;
+          const localStr = `${d.localdate} ${d.local12} (${d.local24} ${d.localabbrev})`;
+          const convStr = `${d.convdate} ${d.conv12} (${d.conv24} ${d.convabbrev})`;
+          const text = `${localStr} - ${convStr} (${d.zone})`;
+          navigator.clipboard.writeText(text).then(() => {
+            showToaster('Copied to clipboard!');
+          }).catch(err => {
+            console.error('Failed to copy: ', err);
+          });
+        });
+      });
+
+      // Add event listeners to short copy buttons
+      document.querySelectorAll('.short-copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const d = btn.dataset;
+          const text = `${d.local12} (${d.localabbrev}) / ${d.conv12} (${d.convabbrev})`;
+          navigator.clipboard.writeText(text).then(() => {
+            showToaster('Short time copied to clipboard!');
+          }).catch(err => {
+            console.error('Failed to copy: ', err);
+          });
+        });
+      });
+
+      // Add event listeners to Discord buttons
+      document.querySelectorAll('.discord-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const d = btn.dataset;
+          const text = `<t:${d.convunix}:t>`;
+          navigator.clipboard.writeText(text).then(() => {
+            showToaster('Discord timestamp copied to clipboard!');
+          }).catch(err => {
+            console.error('Failed to copy: ', err);
+          });
+        });
+      });
+    }
+
+    function copyAllToClipboard() {
+      if (!currentBaseTime) return;
+
+      let textToCopy = '';
+      const localAbbrev = currentBaseTime.toFormat('ZZZZ');
+      const localTimeStr = `${currentBaseTime.toFormat('MM-dd-yy hh:mm:ss a')} (${currentBaseTime.toFormat('HH:mm:ss')} ${localAbbrev})`;
+
+      timezones.forEach(zone => {
+        const convertedTime = currentBaseTime.setZone(zone.tz);
+        const convAbbrev = convertedTime.toFormat('ZZZZ');
+        const convertedTimeStr = zone.name === 'UTC'
+          ? `${convertedTime.toFormat('MM-dd-yy HH:mm:ss')} (${convertedTime.toFormat('HH:mm:ss')} ${convAbbrev})`
+          : `${convertedTime.toFormat('MM-dd-yy hh:mm:ss a')} (${convertedTime.toFormat('HH:mm:ss')} ${convAbbrev})`;
+        textToCopy += `${localTimeStr} - ${convertedTimeStr} (${zone.name})\n`;
+      });
+
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        showToaster('All times copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+      });
+    }
+
+    // Update on input change
+    const timeInput = document.getElementById('time-input');
+    timeInput.addEventListener('input', updateTable);
+
+    // Update on slider change
+    const slider = document.getElementById('offset-slider');
+    slider.addEventListener('input', updateTable);
+
+    // Reset button
+    const resetButton = document.getElementById('reset-button');
+    resetButton.addEventListener('click', () => {
+      document.getElementById('time-input').value = '';
+      document.getElementById('offset-slider').value = '0';
+      updateTable();
+    });
+
+    // Copy all button
+    const copyAllButton = document.getElementById('copy-all-button');
+    copyAllButton.addEventListener('click', copyAllToClipboard);
+
+    // Initial update
+    updateTable();
+
+    // Update every second for live feel when no specific time is entered
+    setInterval(() => {
+      if (!document.getElementById('time-input').value) {
+        updateTable();
+      }
+    }, 1000);
+  </script>
+</body>
+
+</html>
