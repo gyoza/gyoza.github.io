@@ -228,6 +228,154 @@
       /* Yellow */
     }
 
+    .delete-btn {
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      background-color: #ef4444;
+      color: white;
+    }
+
+    .delete-btn:hover {
+      background-color: #dc2626;
+    }
+
+    #customization-buttons {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 0.75rem;
+    }
+
+    .secondary-btn {
+      padding: 0.6rem 1.25rem;
+      font-size: 0.95rem;
+      background-color: #64748b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .secondary-btn:hover {
+      background-color: #475569;
+      transform: translateY(-2px);
+    }
+
+    #picker-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #picker-overlay.open {
+      display: flex;
+    }
+
+    #picker-modal {
+      background-color: #fff;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      width: min(560px, 92vw);
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #picker-header {
+      padding: 1rem 1.25rem;
+      background-color: #6366f1;
+      color: white;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #picker-list {
+      padding: 0.5rem 1.25rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .picker-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+    }
+
+    .picker-item:last-child {
+      border-bottom: none;
+    }
+
+    .picker-item input {
+      width: 18px;
+      height: 18px;
+      accent-color: #6366f1;
+      cursor: pointer;
+    }
+
+    .picker-item.disabled {
+      color: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .picker-item .picker-tz {
+      color: #6b7280;
+      font-size: 0.85rem;
+      margin-left: auto;
+    }
+
+    #picker-footer {
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      border-top: 1px solid #e5e7eb;
+      background-color: #f9fafb;
+    }
+
+    #picker-footer .secondary-btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    #picker-add-button {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      background-color: #10b981;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #picker-add-button:hover {
+      background-color: #059669;
+    }
+
+    #picker-add-button:disabled {
+      background-color: #9ca3af;
+      cursor: not-allowed;
+    }
+
     #copy-all-button {
       padding: 0.75rem 1.5rem;
       font-size: 1rem;
@@ -320,12 +468,31 @@
     <tbody id="time-body"></tbody>
   </table>
   <button id="copy-all-button">Copy All Times to Clipboard</button>
+  <div id="customization-buttons">
+    <button id="add-common-button" class="secondary-btn">Add Common Timezones</button>
+    <button id="reset-customization-button" class="secondary-btn">Reset Customization</button>
+  </div>
+
+  <div id="picker-overlay">
+    <div id="picker-modal" role="dialog" aria-labelledby="picker-title">
+      <div id="picker-header">
+        <span id="picker-title">Add Common Timezones</span>
+        <button id="picker-close" class="secondary-btn" style="background-color: transparent; padding: 0.25rem 0.5rem; font-size: 1.25rem;">&times;</button>
+      </div>
+      <div id="picker-list"></div>
+      <div id="picker-footer">
+        <button id="picker-cancel-button" class="secondary-btn">Cancel</button>
+        <button id="picker-add-button" disabled>Add Selected</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toaster"></div>
 
   <script>
     const { DateTime } = luxon;
 
-    const timezones = [
+    const defaultTimezones = [
       { name: 'Hawaii Time (HT)', tz: 'Pacific/Honolulu' },
       { name: 'Pacific Time (PT)', tz: 'America/Los_Angeles' },
       { name: 'Mountain Time (MT)', tz: 'America/Denver' },
@@ -339,6 +506,75 @@
       { name: 'Central Europe (Paris, Berlin, Rome, Madrid)', tz: 'Europe/Paris' },
       { name: 'New Zealand (NZ)', tz: 'Pacific/Auckland' }
     ];
+
+    // Most populated metropolitan areas / population centers worldwide.
+    const commonTimezones = [
+      { name: 'Tokyo', tz: 'Asia/Tokyo' },
+      { name: 'Delhi', tz: 'Asia/Kolkata' },
+      { name: 'Shanghai', tz: 'Asia/Shanghai' },
+      { name: 'São Paulo', tz: 'America/Sao_Paulo' },
+      { name: 'Mexico City', tz: 'America/Mexico_City' },
+      { name: 'Cairo', tz: 'Africa/Cairo' },
+      { name: 'Mumbai', tz: 'Asia/Kolkata' },
+      { name: 'Beijing', tz: 'Asia/Shanghai' },
+      { name: 'Dhaka', tz: 'Asia/Dhaka' },
+      { name: 'Osaka', tz: 'Asia/Tokyo' },
+      { name: 'New York', tz: 'America/New_York' },
+      { name: 'Karachi', tz: 'Asia/Karachi' },
+      { name: 'Buenos Aires', tz: 'America/Argentina/Buenos_Aires' },
+      { name: 'Chongqing', tz: 'Asia/Shanghai' },
+      { name: 'Istanbul', tz: 'Europe/Istanbul' },
+      { name: 'Kolkata', tz: 'Asia/Kolkata' },
+      { name: 'Manila', tz: 'Asia/Manila' },
+      { name: 'Lagos', tz: 'Africa/Lagos' },
+      { name: 'Rio de Janeiro', tz: 'America/Sao_Paulo' },
+      { name: 'Tianjin', tz: 'Asia/Shanghai' },
+      { name: 'Kinshasa', tz: 'Africa/Kinshasa' },
+      { name: 'Guangzhou', tz: 'Asia/Shanghai' },
+      { name: 'Los Angeles', tz: 'America/Los_Angeles' },
+      { name: 'Moscow', tz: 'Europe/Moscow' },
+      { name: 'Shenzhen', tz: 'Asia/Shanghai' },
+      { name: 'Lahore', tz: 'Asia/Karachi' },
+      { name: 'Bangalore', tz: 'Asia/Kolkata' },
+      { name: 'Paris', tz: 'Europe/Paris' },
+      { name: 'Bogotá', tz: 'America/Bogota' },
+      { name: 'Jakarta', tz: 'Asia/Jakarta' },
+      { name: 'Chennai', tz: 'Asia/Kolkata' },
+      { name: 'Lima', tz: 'America/Lima' },
+      { name: 'Bangkok', tz: 'Asia/Bangkok' },
+      { name: 'Seoul', tz: 'Asia/Seoul' },
+      { name: 'Nagoya', tz: 'Asia/Tokyo' },
+      { name: 'Hyderabad', tz: 'Asia/Kolkata' },
+      { name: 'London', tz: 'Europe/London' },
+      { name: 'Tehran', tz: 'Asia/Tehran' },
+      { name: 'Chicago', tz: 'America/Chicago' },
+      { name: 'Chengdu', tz: 'Asia/Shanghai' }
+    ];
+
+    const STORAGE_KEY = 'timezoneCustomization';
+
+    function loadTimezones() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {
+        console.error('Failed to load saved timezones:', e);
+      }
+      return defaultTimezones.slice();
+    }
+
+    function saveTimezones() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(timezones));
+      } catch (e) {
+        console.error('Failed to save timezones:', e);
+      }
+    }
+
+    let timezones = loadTimezones();
 
     const localTz = DateTime.now().zoneName;
 
@@ -386,7 +622,7 @@
       const localAbbrev = baseTime.toFormat('ZZZZ');
       const localUnix = Math.floor(baseTime.toSeconds());
 
-      timezones.forEach(zone => {
+      timezones.forEach((zone, index) => {
         const convertedTime = baseTime.setZone(zone.tz);
         const format12 = zone.name === 'UTC' ? 'hh:mm:ss a' : 'hh:mm:ss a';
         const format24 = 'HH:mm:ss';
@@ -400,14 +636,17 @@
                     <td>${zone.name}</td>
                     <td class="time-cell">
                         <span class="time-text">${convDate} ${convTime12} (${convTime24} ${convAbbrev})</span>
-                        <button class="copy-btn" data-local12="${localTime12}" data-local24="${localTime24}" data-localabbrev="${localAbbrev}" data-localdate="${localDate}" data-conv12="${convTime12}" data-conv24="${convTime24}" data-convabbrev="${convAbbrev}" data-convdate="${convDate}" data-zone="${zone.name}">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <button class="copy-btn" title="Copy full timestamp" data-local12="${localTime12}" data-local24="${localTime24}" data-localabbrev="${localAbbrev}" data-localdate="${localDate}" data-conv12="${convTime12}" data-conv24="${convTime24}" data-convabbrev="${convAbbrev}" data-convdate="${convDate}" data-zone="${zone.name}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
                         </button>
-                        <button class="short-copy-btn" data-local12="${localTime12}" data-localabbrev="${localAbbrev}" data-conv12="${convTime12}" data-convabbrev="${convAbbrev}">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        <button class="short-copy-btn" title="Copy short time" data-local12="${localTime12}" data-localabbrev="${localAbbrev}" data-conv12="${convTime12}" data-convabbrev="${convAbbrev}">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="9" x2="18" y2="9"></line><line x1="6" y1="15" x2="14" y2="15"></line></svg>
                         </button>
-                        <button class="discord-btn" data-convunix="${convUnix}">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        <button class="discord-btn" title="Copy Discord timestamp" data-convunix="${convUnix}">
+                            <svg width="20" height="20" viewBox="0 -28.5 256 256" preserveAspectRatio="xMidYMid" fill="currentColor"><path d="M216.856339,16.5966031 C200.285002,8.84328665 182.566144,3.2084988 164.041564,0 C161.766523,4.11318106 159.108624,9.64549908 157.276099,14.0464379 C137.583995,11.0849896 118.072967,11.0849896 98.7430163,14.0464379 C96.9108417,9.64549908 94.1925838,4.11318106 91.8971895,0 C73.3526068,3.2084988 55.6133949,8.86399117 39.0420583,16.6376612 C5.61752293,67.146514 -3.4433191,116.400813 1.08711069,164.955721 C23.2560196,181.510915 44.7403634,191.567697 65.8621325,198.148576 C71.0772151,190.971126 75.7283628,183.341335 79.7352139,175.300261 C72.104019,172.400575 64.7949724,168.822202 57.8887866,164.667963 C59.7209612,163.310589 61.5131304,161.891452 63.2445898,160.431257 C105.36741,180.133187 151.134928,180.133187 192.754523,160.431257 C194.506336,161.891452 196.298154,163.310589 198.110326,164.667963 C191.183787,168.842556 183.854737,172.420929 176.223542,175.320965 C180.230393,183.341335 184.861538,190.991831 190.096624,198.16893 C211.238746,191.588051 232.743023,181.531619 254.911949,164.955721 C260.227747,108.668201 245.831087,59.8662432 216.856339,16.5966031 Z M85.4738752,135.09489 C72.8290281,135.09489 62.4592217,123.290155 62.4592217,108.914901 C62.4592217,94.5396472 72.607595,82.7145587 85.4738752,82.7145587 C98.3405064,82.7145587 108.709962,94.5189427 108.488529,108.914901 C108.508531,123.290155 98.3405064,135.09489 85.4738752,135.09489 Z M170.525237,135.09489 C157.88039,135.09489 147.510584,123.290155 147.510584,108.914901 C147.510584,94.5396472 157.658606,82.7145587 170.525237,82.7145587 C183.391518,82.7145587 193.761324,94.5189427 193.539891,108.914901 C193.539891,123.290155 183.391518,135.09489 170.525237,135.09489 Z"/></svg>
+                        </button>
+                        <button class="delete-btn" data-index="${index}" title="Remove this timezone">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                     </td>
                 `;
@@ -454,6 +693,74 @@
           });
         });
       });
+
+      // Add event listeners to delete buttons
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.dataset.index, 10);
+          const removed = timezones[idx];
+          timezones.splice(idx, 1);
+          saveTimezones();
+          updateTable();
+          if (removed) showToaster(`Removed ${removed.name}`);
+        });
+      });
+    }
+
+    function resetCustomization() {
+      timezones = defaultTimezones.slice();
+      saveTimezones();
+      updateTable();
+      showToaster('Customization reset to defaults');
+    }
+
+    function openTimezonePicker() {
+      const list = document.getElementById('picker-list');
+      const addBtn = document.getElementById('picker-add-button');
+      const existing = new Set(timezones.map(z => `${z.name}|${z.tz}`));
+
+      list.innerHTML = '';
+      commonTimezones.forEach((zone, i) => {
+        const key = `${zone.name}|${zone.tz}`;
+        const alreadyAdded = existing.has(key);
+        const item = document.createElement('label');
+        item.className = 'picker-item' + (alreadyAdded ? ' disabled' : '');
+        item.innerHTML = `
+          <input type="checkbox" data-index="${i}" ${alreadyAdded ? 'disabled' : ''}>
+          <span>${zone.name}${alreadyAdded ? ' (already added)' : ''}</span>
+          <span class="picker-tz">${zone.tz}</span>
+        `;
+        list.appendChild(item);
+      });
+
+      const updateAddBtn = () => {
+        const anyChecked = list.querySelectorAll('input[type="checkbox"]:checked').length > 0;
+        addBtn.disabled = !anyChecked;
+      };
+      list.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', updateAddBtn);
+      });
+      updateAddBtn();
+
+      document.getElementById('picker-overlay').classList.add('open');
+    }
+
+    function closeTimezonePicker() {
+      document.getElementById('picker-overlay').classList.remove('open');
+    }
+
+    function addSelectedTimezones() {
+      const checked = document.querySelectorAll('#picker-list input[type="checkbox"]:checked');
+      let added = 0;
+      checked.forEach(cb => {
+        const i = parseInt(cb.dataset.index, 10);
+        timezones.push(commonTimezones[i]);
+        added++;
+      });
+      saveTimezones();
+      updateTable();
+      closeTimezonePicker();
+      if (added) showToaster(`Added ${added} timezone${added === 1 ? '' : 's'}`);
     }
 
     function copyAllToClipboard() {
@@ -498,6 +805,16 @@
     // Copy all button
     const copyAllButton = document.getElementById('copy-all-button');
     copyAllButton.addEventListener('click', copyAllToClipboard);
+
+    // Customization buttons
+    document.getElementById('reset-customization-button').addEventListener('click', resetCustomization);
+    document.getElementById('add-common-button').addEventListener('click', openTimezonePicker);
+    document.getElementById('picker-close').addEventListener('click', closeTimezonePicker);
+    document.getElementById('picker-cancel-button').addEventListener('click', closeTimezonePicker);
+    document.getElementById('picker-add-button').addEventListener('click', addSelectedTimezones);
+    document.getElementById('picker-overlay').addEventListener('click', (e) => {
+      if (e.target.id === 'picker-overlay') closeTimezonePicker();
+    });
 
     // Initial update
     updateTable();

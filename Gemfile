@@ -1,6 +1,14 @@
 source "https://rubygems.org"
 
-gem "github-pages", group: :jekyll_plugins
+gem "jekyll", "~> 4.3"
+gem "jekyll-remote-theme", "~> 0.4"
+gem "jekyll-feed", "~> 0.17"
+gem "jekyll-soopr-seo-tag", "~> 2.7"
+gem "jekyll-sitemap", "~> 1.4"
+gem "jekyll-markdown-output"
+gem "jekyll-llms-output"
+gem "jekyll-sass-converter", "~> 3.0"
+gem "sass-embedded", "~> 1.69"
 gem "webrick", "~> 1.8"
 gem "csv"
 gem "bigdecimal"
