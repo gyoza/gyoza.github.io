@@ -500,7 +500,7 @@
       { name: 'Eastern Time (EST)', tz: 'America/New_York' },
       { name: 'Buenos Aires', tz: 'America/Argentina/Buenos_Aires' },
       { name: 'Brazil (São Paulo)', tz: 'America/Sao_Paulo' },
-      { name: 'India', tz: 'Asia/Kolkata' },
+      { name: 'Bengaluru', tz: 'Asia/Kolkata' },
       { name: 'UTC', tz: 'UTC' },
       { name: 'London', tz: 'Europe/London' },
       { name: 'Central Europe (Paris, Berlin, Rome, Madrid)', tz: 'Europe/Paris' },
@@ -550,6 +550,17 @@
       { name: 'Chicago', tz: 'America/Chicago' },
       { name: 'Chengdu', tz: 'Asia/Shanghai' }
     ];
+
+    const cityOverrides = {
+      'Asia/Kolkata': 'Bengaluru'
+    };
+
+    function cityFromTz(tz) {
+      if (cityOverrides[tz]) return cityOverrides[tz];
+      if (tz === 'UTC') return 'UTC';
+      const segments = tz.split('/');
+      return segments[segments.length - 1].replace(/_/g, ' ');
+    }
 
     const STORAGE_KEY = 'timezoneCustomization';
 
@@ -620,6 +631,7 @@
       const localDate = baseTime.toFormat('MM-dd-yy');
       const localTime24 = baseTime.toFormat('HH:mm:ss');
       const localAbbrev = baseTime.toFormat('ZZZZ');
+      const localCity = cityFromTz(localTz);
       const localUnix = Math.floor(baseTime.toSeconds());
 
       timezones.forEach((zone, index) => {
@@ -630,6 +642,7 @@
         const convTime24 = convertedTime.toFormat(format24);
         const convDate = convertedTime.toFormat('MM-dd-yy');
         const convAbbrev = convertedTime.toFormat('ZZZZ');
+        const convCity = cityFromTz(zone.tz);
         const convUnix = Math.floor(convertedTime.toSeconds());
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -639,7 +652,7 @@
                         <button class="copy-btn" title="Copy full timestamp" data-local12="${localTime12}" data-local24="${localTime24}" data-localabbrev="${localAbbrev}" data-localdate="${localDate}" data-conv12="${convTime12}" data-conv24="${convTime24}" data-convabbrev="${convAbbrev}" data-convdate="${convDate}" data-zone="${zone.name}">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
                         </button>
-                        <button class="short-copy-btn" title="Copy short time" data-local12="${localTime12}" data-localabbrev="${localAbbrev}" data-conv12="${convTime12}" data-convabbrev="${convAbbrev}">
+                        <button class="short-copy-btn" title="Copy short time" data-local12="${localTime12}" data-localcity="${localCity}" data-conv12="${convTime12}" data-convcity="${convCity}">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="9" x2="18" y2="9"></line><line x1="6" y1="15" x2="14" y2="15"></line></svg>
                         </button>
                         <button class="discord-btn" title="Copy Discord timestamp" data-convunix="${convUnix}">
@@ -672,7 +685,7 @@
       document.querySelectorAll('.short-copy-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const d = btn.dataset;
-          const text = `${d.local12} (${d.localabbrev}) / ${d.conv12} (${d.convabbrev})`;
+          const text = `${d.local12} (${d.localcity}) / ${d.conv12} (${d.convcity})`;
           navigator.clipboard.writeText(text).then(() => {
             showToaster('Short time copied to clipboard!');
           }).catch(err => {
